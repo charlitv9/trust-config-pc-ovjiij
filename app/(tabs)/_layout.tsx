@@ -1,54 +1,80 @@
 
+import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
-import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
-import { Stack } from 'expo-router';
-import FloatingTabBar, { TabBarItem } from '@/components/FloatingTabBar';
+import FloatingTabBar from '@/components/FloatingTabBar';
 import { colors } from '@/styles/commonStyles';
 
 export default function TabLayout() {
-  const tabs: TabBarItem[] = [
+  const tabs = [
     {
       name: '(home)',
-      route: '/(tabs)/(home)/',
+      title: 'Accueil',
       icon: 'house.fill',
-      label: 'Accueil',
+      route: '/(tabs)/(home)',
+    },
+    {
+      name: 'fiche-perso',
+      title: 'Contact',
+      icon: 'envelope.fill',
+      route: '/fiche-perso',
     },
     {
       name: 'profile',
-      route: '/(tabs)/profile',
+      title: 'À Propos',
       icon: 'info.circle.fill',
-      label: 'À Propos',
+      route: '/(tabs)/profile',
     },
   ];
 
   if (Platform.OS === 'ios') {
     return (
-      <NativeTabs>
-        <NativeTabs.Trigger name="(home)">
-          <Icon sf="house.fill" drawable="ic_home" />
-          <Label>Accueil</Label>
-        </NativeTabs.Trigger>
-        <NativeTabs.Trigger name="profile">
-          <Icon sf="info.circle.fill" drawable="ic_profile" />
-          <Label>À Propos</Label>
-        </NativeTabs.Trigger>
-      </NativeTabs>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textSecondary,
+          tabBarStyle: {
+            backgroundColor: colors.card,
+            borderTopColor: colors.highlight,
+          },
+        }}
+      >
+        <Tabs.Screen
+          name="(home)"
+          options={{
+            title: 'Accueil',
+            tabBarIcon: ({ color }) => (
+              <IconSymbol name="house.fill" color={color} size={28} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'À Propos',
+            tabBarIcon: ({ color }) => (
+              <IconSymbol name="info.circle.fill" color={color} size={28} />
+            ),
+          }}
+        />
+      </Tabs>
     );
   }
 
   return (
     <>
-      <Stack
+      <Tabs
         screenOptions={{
           headerShown: false,
-          animation: 'none',
         }}
+        tabBar={() => <FloatingTabBar tabs={tabs} />}
       >
-        <Stack.Screen name="(home)" />
-        <Stack.Screen name="profile" />
-      </Stack>
-      <FloatingTabBar tabs={tabs} />
+        <Tabs.Screen name="(home)" />
+        <Tabs.Screen name="profile" />
+      </Tabs>
     </>
   );
 }
+
+import { IconSymbol } from '@/components/IconSymbol';
