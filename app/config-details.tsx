@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { ScrollView, Pressable, StyleSheet, View, Text, Platform, Image } from 'react-native';
+import { ScrollView, Pressable, StyleSheet, View, Text, Platform, Image, TextInput, Alert, KeyboardAvoidingView } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors, commonStyles } from '@/styles/commonStyles';
 import { pcConfigurations } from '@/data/pcConfigurations';
 import { Component } from '@/types/PCConfig';
+import * as Haptics from 'expo-haptics';
 
 const componentTypeLabels: Record<Component['type'], string> = {
   cpu: 'Processeur',
@@ -32,6 +33,10 @@ const componentTypeIcons: Record<Component['type'], string> = {
 export default function ConfigDetailsScreen() {
   const { id } = useLocalSearchParams();
   const config = pcConfigurations.find(c => c.id === id);
+  const [message, setMessage] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [showPersonalizedForm, setShowPersonalizedForm] = useState(false);
 
   if (!config) {
     return (
@@ -50,6 +55,55 @@ export default function ConfigDetailsScreen() {
     </Pressable>
   );
 
+  const handleSendMessage = () => {
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      Alert.alert(
+        'Champs requis',
+        'Veuillez remplir tous les champs avant d\'envoyer votre message.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert(
+        'Email invalide',
+        'Veuillez entrer une adresse email valide.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    Alert.alert(
+      'Message envoyé !',
+      `Votre demande personnalisée pour "${config.name}" a été envoyée avec succès. Nous vous répondrons dans les plus brefs délais à ${email}.`,
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            setMessage('');
+            setName('');
+            setEmail('');
+            setShowPersonalizedForm(false);
+          }
+        }
+      ]
+    );
+
+    console.log('Message envoyé:', {
+      configId: config.id,
+      configName: config.name,
+      name,
+      email,
+      message,
+      timestamp: new Date().toISOString()
+    });
+  };
+
   return (
     <>
       <Stack.Screen
@@ -63,7 +117,11 @@ export default function ConfigDetailsScreen() {
           headerShadowVisible: true,
         }}
       />
-      <View style={commonStyles.container}>
+      <KeyboardAvoidingView 
+        style={commonStyles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -185,8 +243,110 @@ export default function ConfigDetailsScreen() {
               </View>
             </View>
           </View>
+
+          {/* Personalized Message Section */}
+          <View style={styles.personalizedSection}>
+            <View style={styles.personalizedHeader}>
+              <IconSymbol name="envelope.fill" color={colors.primary} size={24} />
+              <Text style={styles.sectionTitle}>Fiche Personnalisée</Text>
+            </View>
+            
+            {!showPersonalizedForm ? (
+              <View style={styles.personalizedIntro}>
+                <Text style={styles.personalizedIntroText}>
+                  Besoin d&apos;une configuration sur mesure ? Envoyez-nous votre demande personnalisée et nous vous répondrons rapidement.
+                </Text>
+                <Pressable
+                  style={styles.showFormButton}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowPersonalizedForm(true);
+                  }}
+                >
+                  <IconSymbol name="pencil" color={colors.card} size={20} />
+                  <Text style={styles.showFormButtonText}>Créer une demande personnalisée</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.personalizedForm}>
+                <Text style={styles.formDescription}>
+                  Décrivez-nous vos besoins spécifiques pour cette configuration et nous vous contacterons avec une proposition personnalisée.
+                </Text>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Votre nom</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ex: Jean Dupont"
+                    placeholderTextColor={colors.textSecondary}
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Votre email</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ex: jean.dupont@email.com"
+                    placeholderTextColor={colors.textSecondary}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Votre message</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Décrivez vos besoins : budget, utilisation, préférences de composants, etc."
+                    placeholderTextColor={colors.textSecondary}
+                    value={message}
+                    onChangeText={setMessage}
+                    multiline
+                    numberOfLines={6}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.formButtons}>
+                  <Pressable
+                    style={styles.cancelButton}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowPersonalizedForm(false);
+                      setMessage('');
+                      setName('');
+                      setEmail('');
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>Annuler</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.sendButton}
+                    onPress={handleSendMessage}
+                  >
+                    <IconSymbol name="paperplane.fill" color={colors.card} size={18} />
+                    <Text style={styles.sendButtonText}>Envoyer au PDG</Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.infoBox}>
+                  <IconSymbol name="info.circle" color={colors.primary} size={16} />
+                  <Text style={styles.infoText}>
+                    Votre message sera envoyé directement au PDG de Trust ConfigPC
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -398,5 +558,132 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     lineHeight: 20,
+  },
+  personalizedSection: {
+    padding: 16,
+    marginBottom: 20,
+  },
+  personalizedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  personalizedIntro: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 20,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  personalizedIntroText: {
+    fontSize: 15,
+    color: colors.text,
+    lineHeight: 22,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  showFormButton: {
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  showFormButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.card,
+  },
+  personalizedForm: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    padding: 20,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  formDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.highlight,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: colors.text,
+  },
+  textArea: {
+    minHeight: 120,
+    paddingTop: 12,
+  },
+  formButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.highlight,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  sendButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+  },
+  sendButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.card,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.highlight,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.text,
+    lineHeight: 18,
   },
 });
