@@ -1,161 +1,462 @@
-import React from "react";
-import { Stack, Link } from "expo-router";
-import { FlatList, Pressable, StyleSheet, View, Text, Alert, Platform } from "react-native";
-import { IconSymbol } from "@/components/IconSymbol";
-import { GlassView } from "expo-glass-effect";
-import { useTheme } from "@react-navigation/native";
 
-const ICON_COLOR = "#007AFF";
+import React, { useState } from 'react';
+import { Stack, Link } from 'expo-router';
+import { ScrollView, Pressable, StyleSheet, View, Text, Platform, Image } from 'react-native';
+import { IconSymbol } from '@/components/IconSymbol';
+import { colors, commonStyles } from '@/styles/commonStyles';
+import { pcConfigurations } from '@/data/pcConfigurations';
+import { ConfigCategory, ConfigType } from '@/types/PCConfig';
 
 export default function HomeScreen() {
-  const theme = useTheme();
-  const modalDemos = [
-    {
-      title: "Standard Modal",
-      description: "Full screen modal presentation",
-      route: "/modal",
-      color: "#007AFF",
-    },
-    {
-      title: "Form Sheet",
-      description: "Bottom sheet with detents and grabber",
-      route: "/formsheet",
-      color: "#34C759",
-    },
-    {
-      title: "Transparent Modal",
-      description: "Overlay without obscuring background",
-      route: "/transparent-modal",
-      color: "#FF9500",
-    }
-  ];
+  const [selectedCategory, setSelectedCategory] = useState<ConfigCategory>('all');
+  const [selectedType, setSelectedType] = useState<ConfigType>('all');
 
-  const renderModalDemo = ({ item }: { item: (typeof modalDemos)[0] }) => (
-    <GlassView style={[
-      styles.demoCard,
-      Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-    ]} glassEffectStyle="regular">
-      <View style={[styles.demoIcon, { backgroundColor: item.color }]}>
-        <IconSymbol name="square.grid.3x3" color="white" size={24} />
-      </View>
-      <View style={styles.demoContent}>
-        <Text style={[styles.demoTitle, { color: theme.colors.text }]}>{item.title}</Text>
-        <Text style={[styles.demoDescription, { color: theme.dark ? '#98989D' : '#666' }]}>{item.description}</Text>
-      </View>
-      <Link href={item.route as any} asChild>
-        <Pressable>
-          <GlassView style={[
-            styles.tryButton,
-            Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)' }
-          ]} glassEffectStyle="clear">
-            <Text style={[styles.tryButtonText, { color: theme.colors.primary }]}>Try It</Text>
-          </GlassView>
-        </Pressable>
-      </Link>
-    </GlassView>
-  );
+  const filteredConfigs = pcConfigurations.filter(config => {
+    const categoryMatch = selectedCategory === 'all' || config.category === selectedCategory;
+    const typeMatch = selectedType === 'all' || config.type === selectedType;
+    return categoryMatch && typeMatch;
+  });
 
   const renderHeaderRight = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol name="plus" color={theme.colors.primary} />
-    </Pressable>
-  );
-
-  const renderHeaderLeft = () => (
-    <Pressable
-      onPress={() => Alert.alert("Not Implemented", "This feature is not implemented yet")}
-      style={styles.headerButtonContainer}
-    >
-      <IconSymbol
-        name="gear"
-        color={theme.colors.primary}
-      />
-    </Pressable>
+    <Link href="/modal" asChild>
+      <Pressable style={styles.headerButtonContainer}>
+        <IconSymbol name="info.circle" color={colors.primary} size={24} />
+      </Pressable>
+    </Link>
   );
 
   return (
     <>
-      {Platform.OS === 'ios' && (
-        <Stack.Screen
-          options={{
-            title: "Building the app...",
-            headerRight: renderHeaderRight,
-            headerLeft: renderHeaderLeft,
-          }}
-        />
-      )}
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <FlatList
-          data={modalDemos}
-          renderItem={renderModalDemo}
-          keyExtractor={(item) => item.route}
+      <Stack.Screen
+        options={{
+          title: 'Trust ConfigPC',
+          headerStyle: {
+            backgroundColor: colors.card,
+          },
+          headerTintColor: colors.text,
+          headerRight: renderHeaderRight,
+          headerShadowVisible: true,
+        }}
+      />
+      <View style={[commonStyles.container]}>
+        <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={[
-            styles.listContainer,
-            Platform.OS !== 'ios' && styles.listContainerWithTabBar
+            styles.scrollContent,
+            Platform.OS !== 'ios' && styles.scrollContentWithTabBar
           ]}
-          contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
-        />
+        >
+          {/* Hero Section */}
+          <View style={styles.heroSection}>
+            <Text style={styles.heroTitle}>Votre PC Gaming Idéal</Text>
+            <Text style={styles.heroSubtitle}>
+              Configurations fiables et optimisées de 800€ à 1500€
+            </Text>
+            <View style={styles.trustBadge}>
+              <IconSymbol name="checkmark.shield.fill" color={colors.secondary} size={20} />
+              <Text style={styles.trustText}>100% Gratuit • Conseils Fiables</Text>
+            </View>
+          </View>
+
+          {/* Filter Section */}
+          <View style={styles.filterSection}>
+            <Text style={styles.filterTitle}>Budget</Text>
+            <View style={styles.filterButtons}>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedCategory === 'all' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedCategory('all')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedCategory === 'all' && styles.filterButtonTextActive
+                ]}>
+                  Tous
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedCategory === 'entry' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedCategory('entry')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedCategory === 'entry' && styles.filterButtonTextActive
+                ]}>
+                  800-900€
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedCategory === 'mid' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedCategory('mid')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedCategory === 'mid' && styles.filterButtonTextActive
+                ]}>
+                  900-1200€
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedCategory === 'high' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedCategory('high')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedCategory === 'high' && styles.filterButtonTextActive
+                ]}>
+                  1200-1500€
+                </Text>
+              </Pressable>
+            </View>
+
+            <Text style={[styles.filterTitle, { marginTop: 16 }]}>Type</Text>
+            <View style={styles.filterButtons}>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedType === 'all' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedType('all')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedType === 'all' && styles.filterButtonTextActive
+                ]}>
+                  Tous
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedType === 'prebuild' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedType('prebuild')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedType === 'prebuild' && styles.filterButtonTextActive
+                ]}>
+                  Prébuild
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.filterButton,
+                  selectedType === 'custom' && styles.filterButtonActive
+                ]}
+                onPress={() => setSelectedType('custom')}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  selectedType === 'custom' && styles.filterButtonTextActive
+                ]}>
+                  Composants
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Configurations List */}
+          <View style={styles.configurationsSection}>
+            <Text style={styles.sectionTitle}>
+              {filteredConfigs.length} Configuration{filteredConfigs.length > 1 ? 's' : ''} disponible{filteredConfigs.length > 1 ? 's' : ''}
+            </Text>
+            {filteredConfigs.map((config) => (
+              <Link
+                key={config.id}
+                href={{
+                  pathname: '/config-details',
+                  params: { id: config.id }
+                }}
+                asChild
+              >
+                <Pressable style={styles.configCard}>
+                  {config.recommended && (
+                    <View style={styles.recommendedBadge}>
+                      <IconSymbol name="star.fill" color={colors.accent} size={14} />
+                      <Text style={styles.recommendedText}>Recommandé</Text>
+                    </View>
+                  )}
+                  <Image
+                    source={{ uri: config.imageUrl }}
+                    style={styles.configImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.configContent}>
+                    <View style={styles.configHeader}>
+                      <Text style={styles.configName}>{config.name}</Text>
+                      <View style={styles.configTypeBadge}>
+                        <Text style={styles.configTypeText}>
+                          {config.type === 'prebuild' ? 'Prébuild' : 'Custom'}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.configDescription} numberOfLines={2}>
+                      {config.description}
+                    </Text>
+                    <View style={styles.configFooter}>
+                      <View style={styles.performanceTag}>
+                        <IconSymbol name="gauge.with.dots.needle.67percent" color={colors.secondary} size={16} />
+                        <Text style={styles.performanceText}>{config.performance}</Text>
+                      </View>
+                      <Text style={styles.configPrice}>{config.price}€</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+
+          {/* Info Section */}
+          <View style={styles.infoSection}>
+            <Text style={styles.infoTitle}>Pourquoi Trust ConfigPC ?</Text>
+            <View style={styles.infoItem}>
+              <IconSymbol name="checkmark.circle.fill" color={colors.secondary} size={24} />
+              <Text style={styles.infoText}>
+                Configurations testées et validées par des experts
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <IconSymbol name="checkmark.circle.fill" color={colors.secondary} size={24} />
+              <Text style={styles.infoText}>
+                Mises à jour régulières selon les prix du marché
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <IconSymbol name="checkmark.circle.fill" color={colors.secondary} size={24} />
+              <Text style={styles.infoText}>
+                Explications détaillées pour chaque composant
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <IconSymbol name="checkmark.circle.fill" color={colors.secondary} size={24} />
+              <Text style={styles.infoText}>
+                100% gratuit, sans publicité intrusive
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    // backgroundColor handled dynamically
-  },
-  listContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  listContainerWithTabBar: {
-    paddingBottom: 100, // Extra padding for floating tab bar
-  },
-  demoCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  demoIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  demoContent: {
+  scrollView: {
     flex: 1,
   },
-  demoTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-    // color handled dynamically
+  scrollContent: {
+    paddingBottom: 20,
   },
-  demoDescription: {
-    fontSize: 14,
-    lineHeight: 18,
-    // color handled dynamically
+  scrollContentWithTabBar: {
+    paddingBottom: 100,
   },
   headerButtonContainer: {
-    padding: 6,
+    padding: 8,
+    marginRight: 8,
   },
-  tryButton: {
+  heroSection: {
+    backgroundColor: colors.primary,
+    padding: 24,
+    alignItems: 'center',
+  },
+  heroTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.card,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  heroSubtitle: {
+    fontSize: 16,
+    color: colors.card,
+    textAlign: 'center',
+    opacity: 0.9,
+    marginBottom: 16,
+  },
+  trustBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 20,
+    gap: 8,
   },
-  tryButtonText: {
+  trustText: {
+    color: colors.card,
     fontSize: 14,
     fontWeight: '600',
-    // color handled dynamically
+  },
+  filterSection: {
+    padding: 16,
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.highlight,
+  },
+  filterTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.highlight,
+  },
+  filterButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text,
+  },
+  filterButtonTextActive: {
+    color: colors.card,
+  },
+  configurationsSection: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  configCard: {
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  recommendedBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: colors.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+    zIndex: 1,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.15)',
+    elevation: 2,
+  },
+  recommendedText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  configImage: {
+    width: '100%',
+    height: 180,
+    backgroundColor: colors.highlight,
+  },
+  configContent: {
+    padding: 16,
+  },
+  configHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  configName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    flex: 1,
+  },
+  configTypeBadge: {
+    backgroundColor: colors.highlight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  configTypeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  configDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  configFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  performanceTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  performanceText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.secondary,
+  },
+  configPrice: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  infoSection: {
+    padding: 16,
+    backgroundColor: colors.card,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+    elevation: 3,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 16,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    gap: 12,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
   },
 });
